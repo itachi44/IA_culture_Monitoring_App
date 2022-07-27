@@ -1,4 +1,4 @@
-# gsi-app
+# cultura
 
 ## Project setup
 ```

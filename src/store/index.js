@@ -6,54 +6,63 @@ Vue.use(Vuex)
 export default new Vuex.Store({
   state: {
     isAuthenticated: false,
-    token: "",
     isLoading: false,
-    userType: "",
-    user: [],
-    isPwdResetPage: false
+    username: "",
+    domainStatus: 'alert',
+    controlCenterMessage:"Surveillance de votre champ en cours. Il n'y a actuellement rien à signaler sur votre champ.",
+    current_state_image:
+    "http://localhost:8081/static/get_current_status_image",
+    dismissSecs: 10,
+    dismissCountDown: 0,
+    alert_color:'#000;',
+    data:[]
   },
+
   mutations: {
     //initialisation du local storage
     initializeStore(state) {
-      if (localStorage.getItem("token")) {
-        state.token = localStorage.getItem("token");
+      if (localStorage.getItem("username")) {
+        state.username = localStorage.getItem("username");
         state.isAuthenticated = true;
-        //données de l'utilisateur
-        state.user = JSON.parse(localStorage.getItem("user"));
-
       } else {
-        state.token = "";
         state.isAuthenticated = false;
-        state.user = [];
-
+        state.username = "";
       }
 
     },
-    //pour le loadind bar
     setIsLoading(state, status) {
       state.isLoading = status;
     },
-    //souvegarder un token 
-    setToken(state, token) {
-      state.token = token;
-      state.isAuthenticated = true;
+    setIsAuthenticated(state, status) {
+      state.isAuthenticated = status;
     },
-    //supprimer un token
-    removeToken(state) {
-      state.token = '';
-      state.isAuthenticated = false;
+    setUsername(state, username) {
+      state.username = username;
     },
-    //sauvegarder le user
-    setUser(state, user) {
-      state.user = user;
+    removeUsername(state) {
+      state.username = '';
     },
-    //supprimer le user
-    removeUser(state) {
-      state.user = '';
+    setCurrentStateImage(state,image) {
+      state.current_state_image = image;
     },
-    setIsPwdResetPage(state, value) {
-      state.isPwdResetPage = value;
+    setDomainStatus(state,value) {
+      state.domainStatus = value;
     },
+    setcontrolCenterMessage(state,value) {
+      state.controlCenterMessage = value;
+    },
+    setDismissSecs(state,value) {
+      state.dismissSecs = value;
+    },
+    setDismissCountDown(state,value) {
+      state.dismissCountDown = value;
+    },
+    setAlertColor(state,value) {
+      state.alert_color = value;
+    },
+    setData(state, value) {
+      state.data = value;
+    }
   },
   actions: {
 

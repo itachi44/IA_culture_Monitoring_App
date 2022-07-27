@@ -1,52 +1,10 @@
 <template>
   <div class="content">
-    <!-- modal -->
-
-    <div
-      class="modal fade"
-      id="resetPasswordModal"
-      ref="resetPasswordModal"
-      tabindex="-1"
-      aria-labelledby="resetPasswordModalLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="resetPasswordModalLabel">Reinitialiser votre mot de passe</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <form>
-              <div class="mb-3">
-                <label for="identifiant" class="col-form-label">entrer votre adresse email:</label>
-                <input v-model="recovery_email" type="text" class="form-control" id="identifiant" />
-              </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-            <button
-              @click="passwordReset()"
-              data-bs-dismiss="modal"
-              type="button"
-              class="btn btn-primary"
-            >Envoyer</button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <!-- fin modal -->
-
-    <div class="image">
-      <img src="@/assets/onboarding.jpg" />
-    </div>
-
     <div class="loginForm">
       <div class="header">
-        <img src="@/assets/logo.svg" />
+        <img src="@/assets/logo.png" />
       </div>
-      <p class="headerText">Connectez-vous à votre compte</p>
+      <p class="headerText">Commencer à surveiller votre champ.</p>
       <br />
 
       <form @submit.prevent="logIn" class="inputs">
@@ -54,7 +12,7 @@
           size="large"
           class="formInput"
           color="#F0DBBA"
-          v-model="identifiant"
+          v-model="username"
           placeholder="exemple@gmail.com"
         />
         <br />
@@ -70,28 +28,24 @@
         <br />
         <br />
         <div class="stuffs">
-          <router-link
-            data-bs-toggle="modal"
-            data-bs-target="#resetPasswordModal"
-            data-bs-whatever="@mdo"
-            to="/reset_password"
-            style="text-decoration:none; color:#CA7900; margin-top:2%; margin-left:10%; font-size:0.9em;"
-          >Mot de passe oublié ?</router-link>
+          <span
+            style="text-decoration:none; color:#000; margin-top:2%; margin-left:10%; font-size:0.9em;"
+          >Mot de passe oublié ?</span>
         </div>
         <br />
         <br />
         <vs-button
           button="submit"
           ref="button"
-          style="margin-left:15%; color:#CA7900; background-color:#CA7900; width:65%; border-radius:4%; transform:scale(1.2);"
-          color="#CA7900"
+          style="margin-left:15%; color:#ffd75c; background-color:#58821a; width:65%; border-radius:4%; transform:scale(1.2);"
+          color="#58821a"
           flat
         >
           <span style="color:#fff;">Connexion</span>
         </vs-button>
         <br />
         <!-- gestion des erreurs -->
-        <div ref="errors" class="alert alert-danger" v-if="errors.length">
+        <div ref="errors" id="errors" class="alert alert-danger" v-if="errors.length">
           <span v-for="(error,i) in errors" v-bind:key="i">{{ error }}</span>
         </div>
 
@@ -109,14 +63,14 @@
 </template>
 
 <script>
-import axios from "axios";
-
 export default {
   name: "login",
   components: {},
   data: () => ({
+    modalShow: false,
+
     password: "",
-    identifiant: "",
+    username: "",
     errors: [],
     recovery_email: "",
     messages: []
@@ -124,9 +78,11 @@ export default {
   watch: {
     errors: {
       handler(errors) {
-        console.log(errors);
         if (errors) {
-          setTimeout(() => (this.$refs["errors"].style.display = "none"), 3000);
+          setTimeout(
+            () => (document.getElementById("errors").style.display = "none"),
+            3000
+          );
         }
       },
       deep: true
@@ -148,55 +104,38 @@ export default {
       this.openLoadingButton();
       this.errors = [];
       this.$store.commit("setIsLoading", true);
-      axios.defaults.headers.common["Authorization"] = "";
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      localStorage.removeItem("expires_in");
-      localStorage.removeItem("created_at");
 
       const formData = {
-        identifiant: this.identifiant,
-        mot_de_passe: this.password
+        username: this.username,
+        password: this.password
       };
 
       await this.axios
-        .post("/api/login/", formData)
+        .post("/api/login", formData)
         .then(response => {
-          const token = response.data.token;
-          this.$store.commit("setToken", token);
-          this.$store.state.userType = response.data.userType;
-          axios.defaults.headers.common["Authorization"] = "Token " + token;
-          localStorage.setItem("token", token);
+          console.log(response.data);
 
-          let prenom;
-          let message;
+          let username = response.data.username;
+          let message = "Bienvenue " + username;
 
-          //récupération des infos du user
-          if (this.$store.state.userType == "is_student") {
-            this.axios
-              .get("/api/etudiant/?email=" + response.data.user.email)
-              .then(response => {
-                var userData = JSON.parse(
-                  JSON.stringify(response.data.results[0])
-                );
-                prenom = userData.membre["prenom"];
-                message = "Bienvenue " + prenom;
-                //enregistrement de l'utilisateur
-                localStorage.setItem("user", JSON.stringify(userData));
-                this.$store.commit("setUser", userData);
-                //redirection vers la page accueil
-                const toPath = this.$route.query.to || "/Accueil";
-                this.$router.push(toPath).catch(() => {});
-                //affichage d'un message de bienvenue
-                this.$vs.notification({
-                  color: "success",
-                  position: "bottom-left",
-                  title: message,
-                  text: "",
-                  buttonClose: false
-                });
-              });
-          }
+          //enregistrement de l'utilisateur
+          localStorage.setItem("username", response.data.username);
+          this.$store.commit("setUsername", response.data.username);
+          this.$store.commit("setIsAuthenticated", true);
+          localStorage.setItem("isAuthenticated", true);
+
+          //redirection vers la page accueil
+          const toPath = this.$route.query.to || "/accueil";
+          this.$router.push(toPath).catch(() => {});
+
+          //affichage d'un message de bienvenue
+          this.$vs.notification({
+            color: "success",
+            position: "bottom-left",
+            title: message,
+            text: "",
+            buttonClose: false
+          });
         })
         .catch(error => {
           if (error.response) {
@@ -212,7 +151,6 @@ export default {
           }
         });
 
-      //se souvenir de lui?
       //enlever la barre de chargement
       this.$store.commit("setIsLoading", false);
     },
@@ -220,40 +158,18 @@ export default {
       const loading = this.$vs.loading({
         target: this.$refs.button,
         scale: "0.6",
-        background: "#CA7900",
+        background: "#35520a",
         opacity: 1,
         color: "#fff"
       });
       setTimeout(() => {
         loading.close();
       }, 1500);
-    },
-
-    async passwordReset() {
-      if (
-        this.recovery_email
-          .toLowerCase()
-          .match(
-            /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-          )
-      ) {
-        const data = {
-          email: this.recovery_email
-        };
-        this.axios
-          .post("/api/reset_password/", data)
-          .then(response => {
-            this.messages.push(response.data.info);
-            this.recovery_email = "";
-          })
-          .catch(error => {
-            this.errors.push(error.data.info);
-            this.recovery_email = "";
-          });
-      } else {
-        this.errors.push("adresse email invalide.");
-      }
     }
+
+    // async passwordReset() {
+
+    // }
   }
 };
 </script>
@@ -264,13 +180,23 @@ html {
   padding: 0;
   margin: 0;
 }
+
 .content {
   display: flex;
   flex-direction: row;
-}
-.image {
-  width: 55%;
-  margin-bottom: 10%;
+  justify-content: flex-end;
+  align-items: center;
+  background-image: url("../assets/onboarding.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  height: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  min-width: 100%;
+  min-height: 100%;
 }
 
 .inputs {
@@ -282,7 +208,8 @@ html {
   flex-direction: column;
   align-items: center;
   padding: 0;
-  height: 20%;
+  margin-right: 27%;
+  margin-bottom: 10%;
 }
 
 .header {
@@ -293,6 +220,7 @@ html {
 .headerText {
   margin-right: 3%;
   font-size: 1.3em;
+  color: #35520a;
 }
 
 .form {
@@ -313,11 +241,5 @@ html {
   transform: scale(1.4);
   font-size: 0.7em;
   margin-left: 28%;
-}
-
-@media screen and (max-width: 1200px) {
-  .image {
-    display: none;
-  }
 }
 </style>

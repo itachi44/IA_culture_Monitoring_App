@@ -1,24 +1,15 @@
 <template>
   <div id="app">
-    <section v-if="isAuthenticated === false && isPwdResetPage===false">
+    <section v-show="isAuthenticated === false">
       <Login />
     </section>
-
-    <section v-if="isAuthenticated === true">
-      <SideBar :user="user" />
-      <div class="boxSize"></div>
-      <div
-        class="is-loading-bar has-text-centered"
-        v-bind:class="{'is-loading': $store.state.isLoading }"
-      >
-        <div style="margin-left:45%" class="lds-dual-ring"></div>
+    <section v-show="isAuthenticated === true">
+      <SideBar />
+      <div class="footer">
+        <Footer />
       </div>
-
-      <router-view v-if="user" :user="user"></router-view>
     </section>
-    <section v-if="isPwdResetPage === true">
-      <ResetPassword />
-    </section>
+    <router-view></router-view>
   </div>
 </template>
 
@@ -26,9 +17,8 @@
 <script>
 import SideBar from "@/components/SideBar.vue";
 import Login from "@/views/Login.vue";
-import ResetPassword from "@/views/Password_reset.vue";
+import Footer from "@/components/Footer.vue";
 
-import axios from "axios";
 import { mapState } from "vuex";
 
 export default {
@@ -36,7 +26,7 @@ export default {
   components: {
     SideBar,
     Login,
-    ResetPassword
+    Footer
   },
   data() {
     return {
@@ -47,105 +37,70 @@ export default {
   beforeCreate() {
     //récupérer les données du local storage avant la création de l'applicaton
     this.$store.commit("initializeStore");
-    const token = this.$store.state.token;
-    if (token) {
-      axios.defaults.headers.common["Authorization"] = "Token " + token;
-    } else {
-      axios.defaults.headers.common["Authorization"] = "";
-    }
   },
   mounted() {
-    document.title = "ENT-GSI";
-    //verifier le token chaque minute
+    document.title = "Cultura";
+    this.fetchStatus();
+    this.fetchStats();
+    //verifier le champ chaque 2s
     this.timer = window.setInterval(() => {
-      if (this.token) {
-        const formData = {
-          token: this.token
-        };
-
-        this.axios
-          .post("/api/verify_token/", formData)
-          .then(response => {
-            return response.data;
-          })
-          .catch(error => {
-            alert("session expiré veuillez vous reconnecter");
-            axios.defaults.headers.common["Authorization"] = "";
-            localStorage.removeItem("token");
-            localStorage.removeItem("username");
-            localStorage.removeItem("userid");
-            localStorage.removeItem("expires_in");
-            localStorage.removeItem("created_at");
-            this.$store.commit("removeToken");
-            this.$store.commit("removeUser");
-            this.$router.push("/login");
-            console.log(JSON.stringify(error));
-          });
-      }
+      this.fetchStatus();
+      this.fetchStats();
     }, 10000);
-  },
-  //gérer le changement de l'objet user
-  watch: {
-    user: {
-      handler(user) {
-        console.log("user changed");
-        console.log(user);
-      },
-      deep: true
-    }
   },
   computed: {
     ...mapState({
       isAuthenticated: "isAuthenticated",
-      user: "user",
-      expires_in: "expires_in",
-      created_at: "created_at",
-      token: "token",
-      isPwdResetPage: "isPwdResetPage"
+      domainStatus: "domainStatus",
+      controlCenterMessage: "controlCenterMessage",
+      current_state_image: "current_state_image"
     })
   },
   beforeDestroy() {
     clearInterval(this.timer);
   },
-  methods: {}
+  methods: {
+    async fetchStats() {
+      //récupération des statistiques
+
+      await this.axios
+        .get("/api/get_stats?how=weekly")
+        .then(response => {
+          this.$store.commit("setData", response.data.stats);
+        })
+        .catch(error => {
+          console.log(JSON.stringify(error));
+        });
+    },
+    async fetchStatus() {
+      await this.axios
+        .get("/api/get_status?q=status")
+        .then(response => {
+          this.$store.commit("setDomainStatus", response.data.status);
+          this.$store.commit("setcontrolCenterMessage", response.data.message);
+
+          if (response.data.status == "alerte invasion") {
+            this.$store.commit("setAlertColor", "#e74c3c;");
+            this.$root.$emit("showAlertEvent");
+          }
+        })
+        .catch(error => {
+          console.log(JSON.stringify(error));
+        });
+    }
+  }
 };
 </script>
-<style  >
-.boxSize {
-  margin-top: 6%;
-}
-
-.lds-dual-ring {
-  display: inline-block;
-  width: 80px;
-  height: 80px;
-}
-.lds-dual-ring:after {
-  content: " ";
-  display: block;
-  width: 64px;
-  height: 64px;
-  margin: 8px;
-  border-radius: 50%;
-  border: 6px solid #ccc;
-  border-color: #ccc transparent #ccc transparent;
-  animation: lds-dual-ring 1.2s linear infinite;
-}
-@keyframes lds-dual-ring {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-.is-loading-bar {
-  height: 0;
-  overflow: hidden;
-  -webkit-transition: all 0.3s;
-  transition: all 0.3s;
-}
-.is-loading-bar.is-loading {
-  height: 80px;
+<style>
+.footer {
+  border-top: 1px solid gray;
+  border-radius: 3px;
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  max-height: 50px;
+  text-align: center;
+  box-shadow: 0px 0px 3px 0px #888888;
 }
 </style>

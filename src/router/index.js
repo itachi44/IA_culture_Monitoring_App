@@ -1,28 +1,23 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Home from '../views/Home.vue'
-import Programme from '../views/Programme.vue'
-import Planning from '../views/Planning.vue'
-import Immersion from '../views/Immersion.vue'
-import Messagerie from '../views/Messagerie.vue'
+import Defending from '../views/Defending.vue'
+import Visualize from '../views/Visualize.vue'
+import Messaging from '../views/Messaging.vue'
 import LogIn from '../views/Login.vue'
-import Password_reset from '../views/Password_reset.vue'
 import NotFound from '../views/NotFound.vue'
-
-
 import store from '../store/index.js'
 
 
 
 Vue.use(VueRouter)
-let token = localStorage.getItem("token");
+let isAuthenticated = localStorage.getItem("isAuthenticated");
 
 const routes = [
   {
     path: '/',
-    name: 'Accueil',
+    name: 'accueil',
     component: () => {
-      console.log(store.state.isAuthenticated);
       if (store.state.isAuthenticated === true) {
         return Home
       } else {
@@ -31,48 +26,30 @@ const routes = [
     }
   },
   {
-    path: '/Accueil',
+    path: '/accueil',
     name: 'Home',
     component: Home,
   },
+
   {
-    path: '/Programme',
-    name: 'Programme',
-    component: Programme
+    path: '/visualize',
+    name: 'Visualize',
+    component: Visualize
   },
   {
-    path: '/Planning',
-    name: 'Planning',
-    component: Planning
+    path: '/messaging',
+    name: 'Messaging',
+    component: Messaging,
   },
   {
-    path: '/Messagerie',
-    name: 'Messagerie',
-    component: Messagerie,
-  },
-  {
-    path: '/reset_password/:uidb/:key',
-    name: 'reset_password',
-    component: Password_reset,
-    beforeEnter: () => {
-      store.commit("setIsPwdResetPage", true);
-    },
-    beforeRouteLeave() {
-      store.commit("setIsPwdResetPage", false);
-    }
-  },
-  {
-    path: '/Immersion',
-    name: 'Immersion',
-    component: Immersion,
+    path: '/defending',
+    name: 'Defending',
+    component: Defending,
   },
   {
     path: '/login',
     name: 'login',
-    component: LogIn,
-    beforeEnter: () => {
-      store.commit("setIsPwdResetPage", false);
-    },
+    component: LogIn
   },
   {
     path: '/:pathMatch(.*)*',
@@ -87,30 +64,22 @@ const router = new VueRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  console.log(to.path);
-  if (to.path === "/" && token !== null) {
-    next("/Accueil");
+  if (to.path === "/" && (isAuthenticated ===true)) {
+    next("/accueil");
 
-  } else if (to.path === "/" && token === null) {
+  } else if (to.path === "/" && (isAuthenticated === null || isAuthenticated ===false)) {
     next("/login");
   }
-  if (to.path === "/login" && token !== null) {
-    next("/Accueil");
+  if (to.path === "/login" && (isAuthenticated !== null && isAuthenticated !== false)) {
+    next("/accueil");
   }
   // eslint-disable-next-line
-  if (to.path === "/reset_password/" && token === null) {
-    if (to.query) {
-      console.log(to.query);
-      router.push({ name: "reset_password", params: { uidb: to.query.uidb, key: to.query.key } });
-    }
-  }
   if (to.matched.some(record => record.meta.requireLogin) && !store.state.isAuthenticated) {
     next({ name: 'login', query: { to: to.path } });
   } else {
-    next()
+     next()
   }
 })
-
 
 
 export default router

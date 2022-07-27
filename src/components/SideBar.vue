@@ -18,25 +18,22 @@
           <i class="bx bx-menu bx-sm"></i>
         </vs-button>
       </template>
-      <img style=" transform:scale(0.5);" src="@/assets/logo.svg" />
+      <img style=" transform:scale(0.5);" src="@/assets/logo.png" />
       <span
         style="font-size:1.5em; color:#000; font-family:Arial Narrow, sans-serif;"
-      >ENT gestion et suivi des immersions</span>
+      >Cultura : plateforme de surveillance pour les agriculteurs</span>
       <template #right>
-        <div class="student-infos">
-          <vs-button flat color="#F0DBBA" :active="active == 5" @click="active = 5">
-            <span
-              style="color:#CA7900;"
-              v-if="user.membre"
-            >{{user.membre.prenom}} {{user.membre.nom}}</span>
+        <div class="user-infos">
+          <vs-button flat color="#ffd75c" :active="active == 5" @click="active = 5">
+            <span style="color:#58821a;">{{username}}</span>
           </vs-button>
           <vs-button style="background-color:#fff;" class="user-avatar">
             <i style="color:#000;" class="bx bx-user bx-sm"></i>
           </vs-button>
         </div>
 
-        <vs-button class="logoutBtn" @click="logout()" flat color="#F0DBBA">
-          <span style="color:#CA7900;">Deconnexion</span>
+        <vs-button class="logoutBtn" @click="logout()" flat color="#ffd75c">
+          <span style="color:#58821a;">Deconnexion</span>
         </vs-button>
         <vs-button style="background-color:#fff;">
           <i style="color:#000;" class="bx bx-bell bx-sm"></i>
@@ -48,36 +45,31 @@
     </vs-navbar>
     <vs-sidebar absolute v-model="active" :open.sync="activeSidebar">
       <template #logo>
-        <img src="@/assets/logo.svg" />
+        <img src="@/assets/logo.png" />
       </template>
-      <vs-sidebar-item to="/Accueil" class="home" id="home">
+      <vs-sidebar-item to="/accueil" class="home" id="home">
         <template #icon>
-          <i class="bx bx-home"></i>
-        </template>Accueil
-      </vs-sidebar-item>
-      <vs-sidebar-item to="/Programme" id="Programme">
-        <template #icon>
-          <i class="bx bxs-calendar"></i>
+          <i class="bx bx-stats"></i>
         </template>
-        Programme
+        Etat globale du champ
       </vs-sidebar-item>
-      <vs-sidebar-item to="/Planning" id="Planning">
+      <vs-sidebar-item to="/visualize" class="visualize" id="Visualize">
         <template #icon>
-          <i class="bx bx-code-block"></i>
+          <i class="bx bx-slideshow"></i>
         </template>
-        Planning
+        Visionner mon champ
       </vs-sidebar-item>
-      <vs-sidebar-item to="/Immersion" id="Immersion">
+      <vs-sidebar-item to="/defending" class="defending" id="Defending">
         <template #icon>
-          <i class="bx bx-detail"></i>
+          <i class="bx bx-shield-alt-2"></i>
         </template>
-        Immersion
+        Mesures de défense
       </vs-sidebar-item>
-      <vs-sidebar-item to="/Messagerie" id="Messagerie">
+      <vs-sidebar-item to="/messaging" class="messaging" id="Messaging">
         <template #icon>
-          <i class="bx bx-envelope bx-envelope1"></i>
+          <i class="bx bx-envelope"></i>
         </template>
-        Messagerie
+        Services forestiers
       </vs-sidebar-item>
       <template #footer>
         <vs-row justify="space-between"></vs-row>
@@ -87,52 +79,59 @@
 </template>
 
   <script>
-import axios from "axios";
+import { mapState } from "vuex";
 
 export default {
-  props: {
-    user: {
-      type: []
-    }
-  },
   data: () => ({
     active: "home",
     activeSidebar: false
   }),
   methods: {
-    async logout() {
-      const toPath = this.$route.query.to || "/login";
-      console.log(toPath);
-
-      this.$router.push(toPath).catch(() => {});
-      if (this.$store.state.token) {
-        await this.axios
-          .post("/api/logout/", this.$store.state.token)
-          .then(response => {
-            axios.defaults.headers.common["Authorization"] = "";
-            localStorage.removeItem("token");
-            localStorage.removeItem("username");
-            localStorage.removeItem("expires_in");
-            localStorage.removeItem("created_at");
-            localStorage.removeItem("userid");
-            this.$store.commit("removeToken");
-            this.$store.commit("removeUser");
-            console.log(response.data);
-          });
-      }
+    logout() {
+      localStorage.removeItem("isAuthenticated");
+      localStorage.removeItem("username");
+      this.$store.commit("setIsAuthenticated", false);
+      window.location.href = "http://localhost:8080/login";
     }
+  },
+  computed: {
+    ...mapState({
+      username: "username"
+    })
   }
 };
 </script>
 
 
 <style>
+.messaging:focus,
+.messaging:active {
+  color: #58821a !important;
+}
+
+.home:focus,
+.home:active {
+  color: #58821a !important;
+}
+
+.home {
+  color: #000;
+}
+.visualize:focus,
+.visualize:active {
+  color: #58821a !important;
+}
+.defending:focus,
+.defending:active {
+  color: #58821a !important;
+}
+
 .sideBar-link {
   text-decoration: none;
   color: black;
 }
 
-.student-infos {
+.user-infos {
   margin-top: 1%;
   display: flex;
   flex-direction: row;
@@ -144,7 +143,7 @@ export default {
 }
 
 .vs-sidebar__item:after {
-  background-color: #ff9900 !important;
+  background-color: #58821a !important;
 }
 
 .bx-home,
@@ -157,6 +156,6 @@ export default {
 
 .logoutBtn:active {
   transform: scale(0.95);
-  background-color: #ca7900;
+  background-color: #58821a;
 }
 </style>

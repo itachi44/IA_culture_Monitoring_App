@@ -1,81 +1,175 @@
 <template>
   <div class="container">
-    <section class="content">
-      <p style="font-size:1.5em; color:#CA7900;">Implementation de la page d'accueil ici</p>
+    <section class="home_content">
+      <div style="position:absolute;top:45%;" class="center">
+        <b-alert :show="dismissCountDown" variant="danger" @dismiss-count-down="countDownChanged">
+          <p>Des animaux rodent près de votre champ.</p>
+          <b-progress variant="danger" :max="dismissSecs" :value="dismissCountDown" height="4px"></b-progress>
+        </b-alert>
+      </div>
+
+      <div ref="target" id="target" class="center"></div>
+      <p
+        :style="{'color':this.alert_color,'font-size':'1.5em','margin-top':'8%','margin-bottom':'4%','opacity':'0.9'}"
+      >{{controlCenterMessage}}</p>
+      <div class="home_elts">
+        <div class="left_side">
+          <p
+            style="font-size:1em; color:#000; margin-bottom:2%; opacity:0.8;"
+          >Dernière image capturée :</p>
+          <div class="current_state_img">
+            <b-img
+              v-bind="mainProps"
+              rounded
+              :src="current_state_image"
+              fluid
+              alt="dernière image capturée"
+            ></b-img>
+          </div>
+        </div>
+        <div class="right_side">
+          <p style="font-size:1em; color:#000; margin-bottom:2%; opacity:0.8;">Vos statistiques :</p>
+          <div class="center">
+            <vs-table>
+              <template #thead>
+                <vs-tr>
+                  <vs-th>Date</vs-th>
+                  <vs-th>Etat du champ</vs-th>
+                </vs-tr>
+              </template>
+              <template #tbody>
+                <vs-tr :key="i" v-for="(tr, i) in $vs.getPage(data, page, max)" :data="tr">
+                  <vs-td>{{ tr.date }}</vs-td>
+                  <vs-td>{{ tr.etat }}</vs-td>
+                </vs-tr>
+              </template>
+              <template #footer>
+                <vs-pagination v-model="page" :length="$vs.getLength(data, max)" />
+              </template>
+            </vs-table>
+          </div>
+        </div>
+      </div>
     </section>
-    <!-- 
-    <div class="large-12 medium-12 small-12 cell">
-      <label>
-        File
-        <input type="file" id="file" ref="file" v-on:change="handleFileUpload()" />
-      </label>
-      <button v-on:click="submitFile()">Submit</button>
+    <div>
+      <b-button
+        ref="target"
+        id="target"
+        style="color:#fff; height:2.2em; font-size:1.2em; text-decoration:none; transform:scale(0.8); "
+        class="btn btn-unique center"
+        @click="refreshData"
+      >
+        rafraichir les données
+        <b-icon icon="arrow-counterclockwise"></b-icon>
+      </b-button>
     </div>
-
-    <br />
-    <br />
-
-    <div v-if="user">
-      <pdf :src="user.get_cv"></pdf>
-    </div>-->
   </div>
 </template>
 
 
 
 <script>
-import axios from "axios";
 import { mapState } from "vuex";
-//import pdf from "vue-pdf";
 
 export default {
   name: "Home",
-  components: {
-    // pdf
-  },
-  props: {
-    user: {
-      type: []
-    }
-  },
+  components: {},
+
   data() {
     return {
-      file: ""
+      mainProps: {
+        width: 600,
+        height: 400
+      },
+      dismissSecs: 10,
+      dismissCountDown: 0,
+      showDismissibleAlert: false,
+      page: 1,
+      max: 5
     };
   },
 
   methods: {
-    handleFileUpload() {
-      this.file = this.$refs.file.files[0];
+    refreshData() {
+      const loading = this.$vs.loading({
+        text: "Chargement..."
+      });
+      setTimeout(() => {
+        loading.close();
+      }, 1000);
+      this.$store.commit(
+        "setCurrentStateImage",
+        "http://localhost:8081/static/get_current_status_image" +
+          "?cache=" +
+          Math.random()
+      );
     },
-
-    submitFile() {
-      let formData = new FormData();
-      formData.append("cv", this.file);
-
-      //TODO: change the URI it's just a test
-
-      axios
-        .patch("/api/etudiant/1/", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data"
-          }
-        })
-        .then(function() {
-          console.log("SUCCESS!!");
-        })
-        .catch(function() {
-          console.log("FAILURE!!");
-        });
+    countDownChanged(dismissCountDown) {
+      this.dismissCountDown = dismissCountDown;
+    },
+    showAlert() {
+      this.dismissCountDown = this.dismissSecs;
     }
+  },
+  mounted() {
+    const thisInstance = this;
+    this.$root.$on("showAlertEvent", function() {
+      thisInstance.showAlert();
+    });
   },
   computed: {
     ...mapState({
-      isAuthenticated: "isAuthenticated"
+      isAuthenticated: "isAuthenticated",
+      controlCenterMessage: "controlCenterMessage",
+      current_state_image: "current_state_image",
+      domainStatus: "domainStatus",
+      alert_color: "alert_color",
+      data: "data"
     })
   }
 };
 </script>
 
-<style >
+<style>
+.home_content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.home_elts {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+}
+
+.left_side {
+  margin-right: 5%;
+}
+.right_side {
+  margin-left: 5%;
+}
+
+.btn-unique {
+  background-color: #195bff !important;
+  margin-bottom: 5%;
+  transition: all 0.5s ease-out;
+  margin-left: 39%;
+  margin-top: 4%;
+  opacity: 0.9;
+}
+.btn-unique:hover {
+  box-shadow: 1px 1px 1px #7f8fa6;
+  background-color: #195bff !important;
+  opacity: 0.85;
+}
+.btn-unique:active {
+  transform: scale(0.6);
+  border: none;
+  background-color: #195bff !important;
+  opacity: 0.9;
+}
 </style>

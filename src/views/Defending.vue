@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <section class="content">
-      <p style="font-size:1.5em; color:#CA7900;">Implementation de la messagerie ici</p>
+      <p style="font-size:1.5em; color:#CA7900;">Implementation...</p>
     </section>
   </div>
 </template>
@@ -10,7 +10,7 @@
 import { mapState } from "vuex";
 
 export default {
-  name: "Messagerie",
+  name: "Defending",
   components: {},
   props: {
     user: {
